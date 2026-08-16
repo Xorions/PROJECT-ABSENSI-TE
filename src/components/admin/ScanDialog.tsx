@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogBackdrop,
@@ -15,6 +15,8 @@ import { ATTENDANCE_POINTS } from "@/lib/points";
 import { getLocalDate } from "@/lib/date";
 import type { Member } from "@/types";
 
+const SCAN_LOCK_MS = 3000;
+
 type ScanDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -24,17 +26,35 @@ export default function ScanDialog({ open, onOpenChange }: ScanDialogProps) {
   const [result, setResult] = useState<Member | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [paused, setPaused] = useState(false);
   const processingRef = useRef(false);
+  const lockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearLock = () => {
+    if (lockTimerRef.current) {
+      clearTimeout(lockTimerRef.current);
+      lockTimerRef.current = null;
+    }
+    setMessage(null);
+    setPaused(false);
+  };
 
   const handleOpenChange = (next: boolean) => {
+    clearLock();
     setResult(null);
     setMessage(null);
     setError(null);
     onOpenChange(next);
   };
 
+  useEffect(() => {
+    return () => {
+      if (lockTimerRef.current) clearTimeout(lockTimerRef.current);
+    };
+  }, []);
+
   const handleScan = async (rawPayload: string) => {
-    if (processingRef.current) return;
+    if (processingRef.current || paused) return;
     processingRef.current = true;
     setError(null);
     setMessage(null);
@@ -72,35 +92,40 @@ export default function ScanDialog({ open, onOpenChange }: ScanDialogProps) {
         .eq("status", "hadir")
         .maybeSingle();
 
+      let successMessage: string;
+
       if (existingAttendance) {
-        setMessage(`${member.name} sudah tercatat hadir hari ini.`);
-        return;
+        successMessage = `${member.name} sudah tercatat hadir hari ini.`;
+      } else {
+        const { error: insertError } = await supabase
+          .from("attendance")
+          .insert({ member_id: member.id, date: today, status: "hadir" });
+
+        if (insertError) throw insertError;
+
+        const activity = `attendance-${today}`;
+        const { data: existingPoint } = await supabase
+          .from("points")
+          .select("id")
+          .eq("member_id", member.id)
+          .eq("activity", activity)
+          .maybeSingle();
+
+        if (!existingPoint) {
+          const { error: pointError } = await supabase.from("points").insert({
+            member_id: member.id,
+            activity,
+            points: ATTENDANCE_POINTS,
+          });
+          if (pointError) throw pointError;
+        }
+
+        successMessage = `Absensi tercatat, +${ATTENDANCE_POINTS} poin.`;
       }
 
-      const { error: insertError } = await supabase
-        .from("attendance")
-        .insert({ member_id: member.id, date: today, status: "hadir" });
-
-      if (insertError) throw insertError;
-
-      const activity = `attendance-${today}`;
-      const { data: existingPoint } = await supabase
-        .from("points")
-        .select("id")
-        .eq("member_id", member.id)
-        .eq("activity", activity)
-        .maybeSingle();
-
-      if (!existingPoint) {
-        const { error: pointError } = await supabase.from("points").insert({
-          member_id: member.id,
-          activity,
-          points: ATTENDANCE_POINTS,
-        });
-        if (pointError) throw pointError;
-      }
-
-      setMessage(`Absensi tercatat, +${ATTENDANCE_POINTS} poin.`);
+      setMessage(successMessage);
+      setPaused(true);
+      lockTimerRef.current = setTimeout(() => setPaused(false), SCAN_LOCK_MS);
     } catch {
       setError("Gagal memproses scan, coba lagi.");
     } finally {
@@ -119,7 +144,12 @@ export default function ScanDialog({ open, onOpenChange }: ScanDialogProps) {
         </DialogDescription>
 
         <div className="mt-4">
-          <QrScanner autoStart onScan={handleScan} />
+          <QrScanner
+            autoStart
+            paused={paused}
+            onScan={handleScan}
+            onResume={clearLock}
+          />
         </div>
 
         {error && (
