@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Trophy, UserCheck, Users } from "lucide-react";
+import { CalendarDays, Pencil, Trophy, UserCheck, Users } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -10,12 +10,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { getLocalDate } from "@/lib/date";
 import { hasAdminAccess } from "@/lib/role";
 import PointsManager from "@/components/admin/PointsManager";
+import EditMemberDialog, {
+  type MemberRow,
+} from "@/components/admin/EditMemberDialog";
 
 type AttendanceWithMember = {
   member_id: string;
@@ -66,6 +70,9 @@ export default function AdminDashboard() {
   const [dayRows, setDayRows] = useState<AttendanceWithMember[]>([]);
   const [perMember, setPerMember] = useState<MemberCount[]>([]);
   const [totalMembers, setTotalMembers] = useState(0);
+  const [members, setMembers] = useState<MemberRow[]>([]);
+  const [editMember, setEditMember] = useState<MemberRow | null>(null);
+  const [memberQuery, setMemberQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -92,7 +99,10 @@ export default function AdminDashboard() {
         supabase
           .from("attendance")
           .select("member_id, status, member:members(name)"),
-        supabase.from("members").select("id"),
+        supabase
+          .from("members")
+          .select("id, name, division, nim")
+          .order("name"),
       ]);
 
       setDayRows((dayRes.data as AttendanceWithMember[] | null) ?? []);
@@ -122,11 +132,21 @@ export default function AdminDashboard() {
       }
 
       setTotalMembers(
-        ((memberRes.data as { id: string }[] | null) ?? []).length
+        ((memberRes.data as MemberRow[] | null) ?? []).length
       );
+      setMembers((memberRes.data as MemberRow[] | null) ?? []);
       setLoading(false);
     })();
   }, [date, authorized]);
+
+  const reloadMembers = async () => {
+    const { data } = await supabase
+      .from("members")
+      .select("id, name, division, nim")
+      .order("name");
+    setMembers((data as MemberRow[] | null) ?? []);
+    setTotalMembers(((data as MemberRow[] | null) ?? []).length);
+  };
 
   if (!authorized) {
     return <p>Memuat...</p>;
@@ -136,6 +156,14 @@ export default function AdminDashboard() {
   const topStaff = perMember[0];
   const topThree = perMember.slice(0, 3);
   const topThreeIds = new Set(topThree.map((r) => r.member_id));
+
+  const filteredMembers = memberQuery.trim()
+    ? members.filter((m) =>
+        `${m.name} ${m.id} ${m.division ?? ""} ${m.nim ?? ""}`
+          .toLowerCase()
+          .includes(memberQuery.trim().toLowerCase())
+      )
+    : members;
 
   return (
     <div className="flex flex-col gap-6">
@@ -272,7 +300,69 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Daftar Anggota</CardTitle>
+          <CardDescription>
+            {loading
+              ? "Memuat data..."
+              : `${members.length} anggota terdaftar. Klik pensil untuk mengedit data.`}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Input
+            value={memberQuery}
+            onChange={(e) => setMemberQuery(e.target.value)}
+            placeholder="Cari nama, ID, devisi, atau NIM"
+          />
+
+          {loading ? (
+            <p>Memuat...</p>
+          ) : filteredMembers.length === 0 ? (
+            <p className="text-muted-foreground">
+              {memberQuery.trim()
+                ? "Tidak ada anggota yang cocok."
+                : "Belum ada anggota terdaftar."}
+            </p>
+          ) : (
+            <ol className="max-h-96 divide-y overflow-y-auto pr-1">
+              {filteredMembers.map((m) => (
+                <li
+                  key={m.id}
+                  className="flex items-center justify-between gap-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{m.name}</p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {m.id}
+                      {m.division ? ` · ${m.division}` : ""}
+                      {m.nim ? ` · ${m.nim}` : ""}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon-sm"
+                    aria-label={`Edit ${m.name}`}
+                    onClick={() => setEditMember(m)}
+                  >
+                    <Pencil />
+                  </Button>
+                </li>
+              ))}
+            </ol>
+          )}
+        </CardContent>
+      </Card>
+
       <PointsManager />
+
+      <EditMemberDialog
+        member={editMember}
+        onOpenChange={(open) => {
+          if (!open) setEditMember(null);
+        }}
+        onSaved={() => void reloadMembers()}
+      />
     </div>
   );
 }
