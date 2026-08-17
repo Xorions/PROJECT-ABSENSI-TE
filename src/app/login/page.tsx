@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,12 @@ export default function LoginPage() {
   const [pendingMember, setPendingMember] = useState<Member | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [expired, setExpired] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setExpired(params.get("expired") === "1");
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,6 +131,11 @@ export default function LoginPage() {
         </p>
       </div>
       <Card className="border-white/10 bg-card/80 backdrop-blur">
+        {expired && (
+          <div className="mx-4 mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-sm text-amber-300">
+            Sesi Anda telah berakhir demi keamanan. Silakan login kembali.
+          </div>
+        )}
       <CardHeader>
         <CardTitle>Login Anggota</CardTitle>
         <CardDescription>

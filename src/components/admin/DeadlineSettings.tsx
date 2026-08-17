@@ -18,6 +18,7 @@ type DeadlineSource = "db" | "env" | "none" | null;
 export default function DeadlineSettings() {
   const [deadline, setDeadline] = useState("");
   const [source, setSource] = useState<DeadlineSource>(null);
+  const [envDeadline, setEnvDeadline] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -33,6 +34,7 @@ export default function DeadlineSettings() {
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
         setDeadline(data.deadline ?? "");
+        setEnvDeadline(data.envDeadline ?? null);
         setSource((data.source as DeadlineSource) ?? null);
       } else {
         setError(data.error ?? "Gagal memuat pengaturan.");
@@ -82,11 +84,11 @@ export default function DeadlineSettings() {
         </CardTitle>
         <CardDescription>
           {source === "db"
-            ? "Deadline khusus hari ini (diubah admin)."
+            ? "Status: Jam khusus hari ini diubah oleh admin."
             : source === "env"
-              ? "Memakai default server (ABSENSI_DEADLINE)."
+              ? `Status: Menggunakan jam standar (${envDeadline ?? "belum diatur"}).`
               : source === "none"
-                ? "Deadline tidak diatur — tanpa penalti telat."
+                ? "Status: Deadline belum diatur."
                 : "Memuat pengaturan..."}
         </CardDescription>
       </CardHeader>

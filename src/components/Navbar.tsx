@@ -13,6 +13,7 @@ import {
   isAdminVerified,
   clearAdminVerified,
 } from "@/lib/role";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 import type { Member } from "@/types";
 
 export default function Navbar() {
@@ -28,6 +29,8 @@ export default function Navbar() {
   }, [pathname]);
 
   const admin = isAdmin(member) && verified;
+
+  useIdleTimeout(admin);
 
   const handleLogout = () => {
     localStorage.removeItem("member");
