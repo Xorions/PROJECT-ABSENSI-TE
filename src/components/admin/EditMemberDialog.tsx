@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getStoredMember } from "@/lib/role";
 
 export type MemberRow = {
   id: string;
@@ -33,7 +34,6 @@ export default function EditMemberDialog({
   const [name, setName] = useState("");
   const [division, setDivision] = useState("");
   const [nim, setNim] = useState("");
-  const [pin, setPin] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -44,7 +44,6 @@ export default function EditMemberDialog({
       setDivision(member.division ?? "");
       setNim(member.nim ?? "");
     }
-    setPin("");
     setError(null);
     setMessage(null);
   }, [member]);
@@ -52,10 +51,6 @@ export default function EditMemberDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!member) return;
-    if (!pin.trim()) {
-      setError("Masukkan PIN admin terlebih dahulu.");
-      return;
-    }
     setSaving(true);
     setError(null);
     setMessage(null);
@@ -65,11 +60,11 @@ export default function EditMemberDialog({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          adminId: getStoredMember()?.id,
           memberId: member.id,
           name,
           division,
           nim,
-          adminPin: pin,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -130,18 +125,6 @@ export default function EditMemberDialog({
                 placeholder="cth: 124140196"
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="edit-admin-pin">PIN Admin</Label>
-            <Input
-              id="edit-admin-pin"
-              type="password"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="PIN rahasia admin"
-              required
-            />
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}
