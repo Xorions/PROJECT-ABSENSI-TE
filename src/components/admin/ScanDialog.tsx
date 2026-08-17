@@ -13,6 +13,7 @@ import { supabase, useLocal } from "@/lib/supabase";
 import { parseQrPayload } from "@/lib/qr";
 import { ATTENDANCE_POINTS } from "@/lib/points";
 import { getLocalDate } from "@/lib/date";
+import { getStoredMember } from "@/lib/role";
 import type { Member } from "@/types";
 
 const SCAN_LOCK_MS = 3000;
@@ -132,7 +133,10 @@ export default function ScanDialog({ open, onOpenChange }: ScanDialogProps) {
         const res = await fetch("/api/admin/scan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ memberId: parsed.memberId }),
+          body: JSON.stringify({
+            adminId: getStoredMember()?.id,
+            memberId: parsed.memberId,
+          }),
         });
         const data = await res.json().catch(() => ({}));
 
