@@ -8,7 +8,7 @@ A web application for organization member management (esports org "Tera Esports"
 - Automated point calculation & Leaderboard (Staff of the Month).
 - Admin attendance recap (`/admin`): unified admin dashboard with per-date list, per-member total attendance, and points management on a single page.
 - Manual point adjustment (in `/admin` dashboard): admin can add/subtract points with reason + PIN.
-- QR scanning for admin lives in a modal dialog (triggered by the "Scan QR" button in the navbar) — no separate scan route.
+- QR scanning for admin lives in a modal dialog (triggered by the "Scan QR" button in the navbar) — no separate scan route; the modal records attendance via `POST /api/admin/scan` (server-side, service role key).
 
 ## 2. Tech Stack & Libraries
 - **Framework:** Next.js 14 (App Router, TypeScript)
@@ -38,6 +38,7 @@ Admin routes:
 
 ## 5. Business Logic & Point System
 - **Event Attendance (Scan QR):** +10 Points per event, once per member per day (`attendance-YYYY-MM-DD` activity, no duplicates).
+- **Late penalty (auto):** `POST /api/admin/scan` compares server time (in `ABSENSI_TIMEZONE`, default `Asia/Jakarta`) with `ABSENSI_DEADLINE` (HH:mm). If the scan is after the deadline, attendance is still recorded but the attendance points row is UPDATEd from +10 to +5 and its activity becomes `attendance-YYYY-MM-DD-telat`; the response includes `isLate: true` so the scanner shows the amber "Hadir (Telat -5 Poin)" notification.
 - Points are updated dynamically in the database and shown on `/leaderboard`.
 - Manual adjustments stored in `adjustments` table; leaderboard sums `points` + `adjustments`.
 - Admin roles: `Admin` and `Panitia`. Staff roles are everything else.
@@ -50,6 +51,8 @@ Admin routes:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `ADMIN_PIN` (admin PIN; do not commit, do not print its value in code/summaries)
 - `SUPABASE_SERVICE_ROLE_KEY` (server-side only)
+- `ABSENSI_DEADLINE` (HH:mm; scans after this time are marked late and lose 5 points)
+- `ABSENSI_TIMEZONE` (timezone for the deadline/date calc; default `Asia/Jakarta`)
 
 ## 7. Agent Instructions & Rules
 - Always write type-safe TypeScript code.
@@ -58,5 +61,5 @@ Admin routes:
 - Use clean and modern UI with responsive Tailwind design; respect the maroon/cream dark theme.
 - Do NOT read `localStorage`/`Date.now()`/`new Date()` during render — that causes React hydration errors. Load them inside `useEffect` + state.
 - RLS note: PostgREST returns HTTP 204 for a DELETE that matches 0 rows even when RLS blocks it. Verify RLS denials with an insert/select probe, not just the HTTP status.
-- When deploying to Vercel, all four env vars above must be set in the Vercel dashboard (`.env.local` is NOT uploaded).
+- When deploying to Vercel, all six env vars above must be set in the Vercel dashboard (`.env.local` is NOT uploaded).
 - After changing code, run `npx next lint`, `npx tsc --noEmit`, then `npm run build`.
