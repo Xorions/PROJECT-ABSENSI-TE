@@ -17,6 +17,7 @@ import { supabase } from "@/lib/supabase";
 import { getLocalDate } from "@/lib/date";
 import { hasAdminAccess } from "@/lib/role";
 import PointsManager from "@/components/admin/PointsManager";
+import DeadlineSettings from "@/components/admin/DeadlineSettings";
 import EditMemberDialog, {
   type MemberRow,
 } from "@/components/admin/EditMemberDialog";
@@ -211,6 +212,10 @@ export default function AdminDashboard() {
           value={loading ? "..." : topStaff?.total ?? 0}
           sub={topStaff?.name ?? "Belum ada data"}
         />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <DeadlineSettings />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-5">

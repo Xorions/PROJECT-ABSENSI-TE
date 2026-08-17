@@ -1,42 +1,25 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { ATTENDANCE_POINTS, LATE_PENALTY_POINTS } from "@/lib/points";
 import { isValidId, verifyAdminRole } from "@/lib/adminAuth";
+import { getNowInTimezone } from "@/lib/date";
+import {
+  ABSENSI_TIMEZONE,
+  deadlineToMinutes,
+  getAbsensiDeadline,
+} from "@/lib/settings";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const ABSENSI_TIMEZONE = process.env.ABSENSI_TIMEZONE || "Asia/Jakarta";
 
-type NowInZone = { date: string; minutes: number };
-
-function getNowInTimezone(): NowInZone {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat("en-CA", {
-      timeZone: ABSENSI_TIMEZONE,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    })
-      .formatToParts(new Date())
-      .map((p) => [p.type, p.value])
-  );
-
-  let hour = parts.hour;
-  if (hour === "24") hour = "00";
-  const minutes = Number(hour) * 60 + Number(parts.minute);
-
-  return { date: `${parts.year}-${parts.month}-${parts.day}`, minutes };
-}
-
-function getDeadlineMinutes(): number | null {
-  const raw = process.env.ABSENSI_DEADLINE;
-  if (!raw) return null;
-  const match = raw.trim().match(/^(\d{1,2}):(\d{2})$/);
-  if (!match) return null;
-  return Number(match[1]) * 60 + Number(match[2]);
+async function getDeadlineMinutes(
+  admin: SupabaseClient,
+  date: string
+): Promise<number | null> {
+  const dbDeadline = await getAbsensiDeadline(admin, date);
+  const value = dbDeadline ?? process.env.ABSENSI_DEADLINE ?? "";
+  return deadlineToMinutes(value);
 }
 
 export async function POST(request: Request) {
@@ -98,8 +81,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const now = getNowInTimezone();
-  const deadlineMinutes = getDeadlineMinutes();
+  const now = getNowInTimezone(ABSENSI_TIMEZONE);
+  const deadlineMinutes = await getDeadlineMinutes(admin, now.date);
   const isLate = deadlineMinutes !== null && now.minutes > deadlineMinutes;
 
   const { data: existingAttendance } = await admin

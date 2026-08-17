@@ -178,3 +178,16 @@ create table if not exists public.adjustments (
 alter table public.adjustments enable row level security;
 drop policy if exists "anon select adjustments" on public.adjustments;
 create policy "anon select adjustments" on public.adjustments for select using (true);
+
+-- ---------- 8. TABEL SETTINGS (pengaturan dinamis, misal jam deadline absensi) ----------
+-- Hanya service_role (server) yang boleh baca/tulis; anon ditolak oleh RLS
+-- (tidak ada policy yang diberikan).
+create table if not exists public.settings (
+  id uuid primary key default gen_random_uuid(),
+  key text not null unique,               -- misal: 'absensi_deadline:YYYY-MM-DD'
+  value text,
+  updated_by text,                        -- id admin/panitia terakhir yang mengubah
+  updated_at timestamptz default now()
+);
+
+alter table public.settings enable row level security;

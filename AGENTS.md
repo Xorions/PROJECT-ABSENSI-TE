@@ -38,7 +38,7 @@ Admin routes:
 
 ## 5. Business Logic & Point System
 - **Event Attendance (Scan QR):** +10 Points per event, once per member per day (`attendance-YYYY-MM-DD` activity, no duplicates).
-- **Late penalty (auto):** `POST /api/admin/scan` compares server time (in `ABSENSI_TIMEZONE`, default `Asia/Jakarta`) with `ABSENSI_DEADLINE` (HH:mm). If the scan is after the deadline, attendance is still recorded but the attendance points row is UPDATEd from +10 to +5 and its activity becomes `attendance-YYYY-MM-DD-telat`; the response includes `isLate: true` so the scanner shows the amber "Hadir (Telat -5 Poin)" notification.
+- **Late penalty (auto):** `POST /api/admin/scan` compares server time (in `ABSENSI_TIMEZONE`, default `Asia/Jakarta`) with the day's deadline. The deadline is read from the `settings` table (`absensi_deadline:YYYY-MM-DD`, editable by admins from the dashboard via `GET`/`POST /api/admin/settings`), falling back to the `ABSENSI_DEADLINE` env var. If the scan is after the deadline, attendance is still recorded but the attendance points row is UPDATEd from +10 to +5 and its activity becomes `attendance-YYYY-MM-DD-telat`; the response includes `isLate: true` so the scanner shows the amber "Hadir (Telat -5 Poin)" notification.
 - Points are updated dynamically in the database and shown on `/leaderboard`.
 - Manual adjustments stored in `adjustments` table; leaderboard sums `points` + `adjustments`.
 - Admin roles: `Admin` and `Panitia`. Staff roles are everything else.
@@ -51,7 +51,7 @@ Admin routes:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `ADMIN_PIN` (admin PIN; do not commit, do not print its value in code/summaries)
 - `SUPABASE_SERVICE_ROLE_KEY` (server-side only)
-- `ABSENSI_DEADLINE` (HH:mm; scans after this time are marked late and lose 5 points)
+- `ABSENSI_DEADLINE` (HH:mm; fallback default — admins can override per-day from the dashboard via the `settings` table)
 - `ABSENSI_TIMEZONE` (timezone for the deadline/date calc; default `Asia/Jakarta`)
 
 ## 7. Agent Instructions & Rules
