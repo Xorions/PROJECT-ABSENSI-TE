@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
+import { getStoredMember } from "@/lib/role";
 import type { Member } from "@/types";
 
 type AdjustRow = {
@@ -30,7 +31,6 @@ export default function PointsManager() {
   const [history, setHistory] = useState<AdjustRow[]>([]);
   const [customAmount, setCustomAmount] = useState("10");
   const [reason, setReason] = useState("");
-  const [pin, setPin] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -90,10 +90,6 @@ export default function PointsManager() {
 
   const applyAdjust = async (amount: number) => {
     if (!selected) return;
-    if (!pin.trim()) {
-      setError("Masukkan PIN admin terlebih dahulu.");
-      return;
-    }
     setSaving(true);
     setError(null);
     setMessage(null);
@@ -103,10 +99,10 @@ export default function PointsManager() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          adminId: getStoredMember()?.id,
           memberId: selected.id,
           points: amount,
           reason,
-          adminPin: pin,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -239,16 +235,6 @@ export default function PointsManager() {
                   >
                     Terapkan
                   </Button>
-                </div>
-                <div className="max-w-xs space-y-2">
-                  <Label htmlFor="admin-pin">PIN Admin</Label>
-                  <Input
-                    id="admin-pin"
-                    type="password"
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                    placeholder="PIN rahasia admin"
-                  />
                 </div>
               </div>
 
