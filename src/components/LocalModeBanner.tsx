@@ -12,7 +12,7 @@ export default function LocalModeBanner() {
   };
 
   return (
-    <div className="flex items-center justify-center gap-3 bg-amber-400 px-4 py-1.5 text-center text-xs font-medium text-amber-950">
+    <div className="print:hidden flex items-center justify-center gap-3 bg-amber-400 px-4 py-1.5 text-center text-xs font-medium text-amber-950">
       <span>
         Mode Lokal: data tersimpan di browser, belum tersambung Supabase.
       </span>

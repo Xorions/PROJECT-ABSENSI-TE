@@ -1,8 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Pencil, Trophy, UserCheck, Users } from "lucide-react";
+import {
+  CalendarDays,
+  Pencil,
+  Printer,
+  Trophy,
+  UserCheck,
+  Users,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -10,7 +18,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
@@ -306,13 +315,22 @@ export default function AdminDashboard() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Daftar Anggota</CardTitle>
-          <CardDescription>
-            {loading
-              ? "Memuat data..."
-              : `${members.length} anggota terdaftar. Klik pensil untuk mengedit data.`}
-          </CardDescription>
+        <CardHeader className="flex-row items-center justify-between gap-3">
+          <div>
+            <CardTitle>Daftar Anggota</CardTitle>
+            <CardDescription>
+              {loading
+                ? "Memuat data..."
+                : `${members.length} anggota terdaftar. Klik pensil untuk mengedit data.`}
+            </CardDescription>
+          </div>
+          <Link
+            href="/admin/qr"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            <Printer />
+            Cetak QR Lanyard
+          </Link>
         </CardHeader>
         <CardContent className="space-y-4">
           <Input

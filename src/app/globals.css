@@ -156,3 +156,10 @@
     backdrop-filter: blur(14px);
   }
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 8mm;
+  }
+}

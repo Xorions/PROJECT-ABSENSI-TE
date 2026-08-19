@@ -58,7 +58,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="glass-bar sticky top-0 z-50 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-white/10 px-4 py-2.5 sm:px-6">
+    <nav className="glass-bar print:hidden sticky top-0 z-50 flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-white/10 px-4 py-2.5 sm:px-6">
       <Link href="/" className="flex items-center gap-2.5">
         <Image
           src="/logo.png"
