@@ -118,10 +118,12 @@ export default function LeaderboardPage() {
             if (!entry) return null;
             const medal = MEDALS[slot];
             const isWinner = slot === 0;
+            const orderClass =
+              slot === 0 ? "order-1" : slot === 1 ? "order-2" : "order-3";
             return (
               <div
                 key={entry.member_id}
-                className="rounded-2xl border bg-card p-5 text-center"
+                className={`${orderClass} rounded-2xl border bg-card p-5 text-center sm:order-none`}
                 style={{
                   borderColor: isWinner ? medal.ring : "oklch(1 0 0 / 10%)",
                   boxShadow: isWinner
