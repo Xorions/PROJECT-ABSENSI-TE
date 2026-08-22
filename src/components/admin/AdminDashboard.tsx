@@ -196,6 +196,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      <PointsManager />
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={UserCheck}
@@ -348,7 +350,7 @@ export default function AdminDashboard() {
                 : "Belum ada anggota terdaftar."}
             </p>
           ) : (
-            <ol className="max-h-96 divide-y overflow-y-auto pr-1">
+            <ol className="scrollbar-dark max-h-96 divide-y overflow-y-auto pr-1">
               {filteredMembers.map((m) => (
                 <li
                   key={m.id}
@@ -376,8 +378,6 @@ export default function AdminDashboard() {
           )}
         </CardContent>
       </Card>
-
-      <PointsManager />
 
       <EditMemberDialog
         member={editMember}

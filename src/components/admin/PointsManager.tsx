@@ -264,7 +264,7 @@ export default function PointsManager() {
                 : "Belum ada anggota dipilih."}
             </p>
           ) : (
-            <ol className="max-h-96 divide-y overflow-y-auto pr-1">
+            <ol className="scrollbar-dark max-h-96 divide-y overflow-y-auto pr-1">
               {history.map((row) => (
                 <li
                   key={row.created_at}
